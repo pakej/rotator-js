@@ -1,0 +1,25 @@
+{
+  "name": "image-rotator-js",
+  "version": "1.0.0",
+  "description": "Javascript plugin to allow image rotation in websites",
+  "main": "rotator.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zaimramlan/npm-image-rotator-js.git"
+  },
+  "keywords": [
+    "image",
+    "rotator",
+    "js",
+    "javascript"
+  ],
+  "author": "Zaim Ramlan <zaem.muz@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zaimramlan/npm-image-rotator-js/issues"
+  },
+  "homepage": "https://github.com/zaimramlan/npm-image-rotator-js#readme"
+}
