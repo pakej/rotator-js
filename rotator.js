@@ -1,112 +1,139 @@
 /*
-* Rotator.js by Zaim Ramlan
-*
-* TEMPLATE:
-* img_to_rotate			- `<img_to_rotate's ID>`
-* left_button 			- `<ID of img_to_rotate>_left` 			(button for left rotation)
-* right_button 			- `<ID of img_to_rotate>_right` 		(button for right rotation)
-* hidden input field	- `<ID of img_to_rotate>_rotation`		(hidden field to store value of respective image rotation)
-*
-* let ID of,
-* img_to_rotate 	 	- `my_image`
-*
-* therefore ID must be,
-* rotate left button 	- `my_image_left`
-* rotate right button 	- `my_image_right`
-*
-* acceptable arguments:
-* var rotator_instance = new Rotator('my_image', 'my_image_2', ..., 'my_image_N')
-*
-* note:
-* 1) requires jQuery to work
-* 2) arguments accepted are only strings
+* Rotator 2.0.0
+* Copyright © Zaim Ramlan
 */
-var Rotator = function() {
-	// class-wide constants
-	LEFT_BUTTON  = 0;
-	RIGHT_BUTTON = 1;
 
-	// initialize the rotator_groups from the parameters passed
-	this.rotator_groups = split_parameters_from(arguments);
+class Rotator {
 
-	this.activate = function() {
-		/*
-		* since function() in document.ready is another function deep, 
-		* the 'this' context can't be preserved to the class's 'this' context.
-		* so, we need to put it in a placeholder for it to be used in
-		* function() in document.ready function.
-		*/		
-		var self = this;
-		$(document).ready(function() {
-			for(var i = 0; i < self.rotator_groups.length; i++) {
-				rotator_group = self.rotator_groups[i];
-				sessionStorage.setItem(rotator_group.img_to_rotate + "_orientation", 0);
-				self.initialize_buttons_for(
-									LEFT_BUTTON,
-									rotator_group.left_button,
-									rotator_group.img_to_rotate
-								);
-				self.initialize_buttons_for(
-									RIGHT_BUTTON,
-									rotator_group.right_button,
-									rotator_group.img_to_rotate
-								);
-			}
-		});
+    /**
+    * Initializes an instance of Rotator.
+    *
+    * @constructor
+    * @author: Zaim Ramlan
+    * @param {array} elementIds The array of `id`s of the elements to be rotated.
+    */
+    constructor(elementIds) {
+        this._anticlockwiseButton = 0;
+        this._clockwiseButton = 1;
+        this._rotatorGroups = this._group(elementIds);
+    }
 
-		clear_storage_after_finish(self);
-	}
+    /**
+    * Configures the buttons to rotate the element and temporarily store the
+    * rotation angle, for form submission.
+    */
+    configure() {
+        var self = this;
+        self._rotatorGroups.forEach((group) => {
+            self._createHiddenInputFor(group);
+            self._bindButton(self._anticlockwiseButton, group);
+            self._bindButton(self._clockwiseButton, group);
+        });
+    }
 
-	this.initialize_buttons_for = function(type, button, image) {
+    /**
+     * Creates the rotator group object based on the given element IDs.
+     *
+     * @param {array} elementIds The array of `id`s of the elements to be rotated.
+     *
+     * Each rotator group object contains the element ID itself, its hidden input ID,
+     * its clockwise and anticlockwise button IDs respectively.
+     */
+    _group(elementIds) {
+        var rotatorGroups = [];
 
-		$("#" + button).on('click', function() {
-			rotation_angle = parseInt(sessionStorage.getItem(image + "_orientation"));
-			switch(type) {
-				case LEFT_BUTTON:
-					if(rotation_angle == 0) rotation_angle = 360;
-					rotation_angle -= 90;
-					break;
+        elementIds.forEach((id) => {
+            var group = {
+                element: id,
+                hiddenInput: `${id}-rotation`,
+                clockwiseButton: `${id}-clockwise-button`,
+                anticlockwiseButton: `${id}-anticlockwise-button`
+            };
+            rotatorGroups.push(group);
+        });
 
-				case RIGHT_BUTTON:
-					rotation_angle += 90;
-					if(rotation_angle == 360) rotation_angle = 0;
-					break;
-			}
-			// sets the respective hidden field's value for usage with form submission
-			$("#" + image + "_rotation").attr("value", rotation_angle);
-			// rotates the image at the rotation_angle
-			$("#" + image).attr("style", cross_browser_rotation(rotation_angle));
-			sessionStorage.setItem(image + "_orientation", rotation_angle);
-		});
-	}
+        return rotatorGroups;
+    }
 
-	function split_parameters_from(parameters) {
-		all_rotator_groups 	= [];
+    /**
+     * Creates the hidden input to store the rotation angle for the given rotator group.
+     *
+     * @param {object} rotatorGroup The object containing the rotator group's related IDs.
+     */
+    _createHiddenInputFor(rotatorGroup) {
+        var element = document.getElementById(rotatorGroup.element);
+        if (element !== null) {
+            var hiddenInput = document.createElement("input");
+            hiddenInput.type = "hidden";
+            hiddenInput.value = "0";
+            hiddenInput.id = rotatorGroup.hiddenInput;
+            element.appendChild(hiddenInput);
+        }
+    }
 
-		for(var i = 0; i < parameters.length; i++) {
-			rotator_group 	= {img_to_rotate: parameters[i], left_button: parameters[i] + "_left", right_button: parameters[i] + "_right"};
-			all_rotator_groups.push(rotator_group);
-		}
+    /**
+     * Binds the given button type for the given rotator group to rotate the rotator group's element in
+     * clockwise/anticlowise direction.
+     *
+     * @param {integer} buttonType The constant integer to represent the clockwise/anticlockwise buttons.
+     * @param {object} rotatorGroup The object containing the rotator group's related IDs.
+     */
+    _bindButton(buttonType, rotatorGroup) {
+        var self = this;
 
-		return all_rotator_groups;
-	}
+        var isClockwiseButton = buttonType === self._clockwiseButton;
+        var buttonId = isClockwiseButton ? rotatorGroup.clockwiseButton : rotatorGroup.anticlockwiseButton;
+        var button = document.getElementById(buttonId);
 
-	function cross_browser_rotation(angle) {
-		css  = "-webkit-transform: 	rotate(" + angle + "deg);";
-		css += " -moz-transform: 	rotate(" + angle + "deg);";
-		css += " -ms-transform: 	rotate(" + angle + "deg);";
-		css += " -o-transform: 		rotate(" + angle + "deg);";
-		css += " transform: 		rotate(" + angle + "deg);";
-		return css;
-	}		
+        if (button !== null) {
+            button.onclick = function() {
+                self._rotateElementBasedOn(buttonType, rotatorGroup);
+            };
+        }
+    }
 
-	function clear_storage_after_finish(self) {
-		window.onbeforeunload = function() {
-			for(var i = 0; i < self.rotator_groups.length; i++) {
-				rotator_group = self.rotator_groups[i];
-				// removes related items in sessionStorage
-				sessionStorage.removeItem(rotator_group.img_to_rotate + "_orientation");
-			}
-		}		
-	}	
+    /**
+     * Rotates the element based on the button type and the rotator group.
+     *
+     * @param {integer} buttonType The constant integer to represent the clockwise/anticlockwise buttons.
+     * @param {object} rotatorGroup The object containing the rotator group's related IDs.
+     */
+    _rotateElementBasedOn(buttonType, rotatorGroup) {
+        var hiddenInput = document.getElementById(rotatorGroup.hiddenInput);
+        var storedRotation = hiddenInput.value;
+        var rotationAngle = parseInt(storedRotation);
+
+        switch (buttonType) {
+            case this._anticlockwiseButton:
+                if (rotationAngle === 0) rotationAngle = 360;
+                rotationAngle -= 90;
+                break;
+
+            case this._clockwiseButton:
+                rotationAngle += 90;
+                if (rotationAngle === 360) rotationAngle = 0;
+                break;
+        }
+
+        hiddenInput.value = rotationAngle;
+
+        var element = document.getElementById(rotatorGroup.element);
+        if (element !== null) element.style = this._elementStyleRotatedBy(rotationAngle);
+    }
+
+    /**
+     * Creates the rotation to the element via CSS `transform` property.
+     *
+     * @param {integer} angle The rotation angle.
+     */
+    _elementStyleRotatedBy(angle) {
+        css = "-webkit-transform: rotate(" + angle + "deg);";
+        css += " -moz-transform: rotate(" + angle + "deg);";
+        css += " -ms-transform: rotate(" + angle + "deg);";
+        css += " -o-transform: rotate(" + angle + "deg);";
+        css += " transform: rotate(" + angle + "deg);";
+        return css;
+    }
 }
+
+module.exports = Rotator;
