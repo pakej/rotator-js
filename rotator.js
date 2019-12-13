@@ -1,5 +1,5 @@
 /*
-* Rotator 2.0.0
+* Rotator 2.0.1
 * Copyright © Zaim Ramlan
 */
 
